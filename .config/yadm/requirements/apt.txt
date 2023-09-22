@@ -2,4 +2,6 @@ atool
 build-essential
 curl
 ipython3
+python3
+python3-pip
 zsh

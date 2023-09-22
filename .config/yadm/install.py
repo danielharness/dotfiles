@@ -16,7 +16,7 @@ from rich.progress import (
     Progress,
     SpinnerColumn,
     TaskProgressColumn,
-    TimeRemainingColumn,
+    TimeElapsedColumn,
 )
 from rich.table import Table
 from rich.text import Text
@@ -59,40 +59,10 @@ def execute(*args: str | PathLike) -> None:
     subprocess.run(args, capture_output=True, check=True)
 
 
-def print_called_process_error(error: subprocess.CalledProcessError) -> None:
-    """
-    Nicely prints given error.
-    """
-    cmd = error.cmd if isinstance(error.cmd, str) else " ".join(error.cmd)
-    print(f"Command failed: [yellow]{cmd}[/yellow]")
-    if error.stdout:
-        stdout: str = (
-            error.stdout if isinstance(error.stdout, str) else error.stdout.decode()
-        )
-        end = "" if stdout.endswith("\n") else "\n"
-        print(f"[green]{stdout}", end=end)
-    if error.stderr:
-        stderr: str = (
-            error.stderr if isinstance(error.stderr, str) else error.stderr.decode()
-        )
-        end = "" if stderr.endswith("\n") else "\n"
-        print(f"[red]{stderr}", end=end)
-
-
-def ensure_sudo() -> None:
-    """
-    Ensures sudo password is cached.
-    """
-    print("Checking for `sudo` access (may request your password)...")
-    try:
-        execute("sudo", "-n", "true")
-    except subprocess.CalledProcessError:
-        execute("sudo", "true")
-
-
 def execute_display(*args: str | PathLike, stdout: Text, stderr: Text) -> None:
     """
-    Executes given command, displaying output to given `Text` objects.
+    Executes given command, checking its result.
+    Displays its output to given `Text` objects.
     """
 
     def read_append(stream: BinaryIO, text: Text) -> None:
@@ -137,7 +107,7 @@ def run_jobs_display(jobs: Sequence[CommandJob]) -> None:
         SpinnerColumn(),
         BarColumn(),
         TaskProgressColumn(show_speed=True),
-        TimeRemainingColumn(elapsed_when_finished=True),
+        TimeElapsedColumn(),
         "{task.description}",
     )
     task_id_to_job = {
@@ -168,13 +138,13 @@ def run_jobs_display(jobs: Sequence[CommandJob]) -> None:
     output_table.add_row(
         Panel(
             stdout_text,
-            title="stdout",
+            title="[b]stdout",
             border_style="green",
             padding=(2, 2),
         ),
         Panel(
             stderr_text,
-            title="stderr",
+            title="[b]stderr",
             border_style="red",
             padding=(2, 2),
         ),
@@ -211,6 +181,17 @@ def run_jobs_display(jobs: Sequence[CommandJob]) -> None:
 
             # Update total status
             progress.advance(total_task_id)
+
+
+def ensure_sudo() -> None:
+    """
+    Ensures sudo password is cached.
+    """
+    print("Checking for `sudo` access (may request your password)...")
+    try:
+        execute("sudo", "-n", "true")
+    except subprocess.CalledProcessError:
+        execute("sudo", "true")
 
 
 def read_requirements(file: Path) -> list[str]:
@@ -261,7 +242,7 @@ def get_apt_requirement_install_commands(
     """
     Returns a list of commands that install given apt requirements.
     """
-    commands = [["sudo", "apt", "updatea", "-y"], ["sudo", "apt", "upgrade", "-y"]]
+    commands = [["sudo", "apt", "update", "-y"], ["sudo", "apt", "upgrade", "-y"]]
     commands.extend(["sudo", "apt", "install", "-y", r] for r in requirements)
     return commands
 
