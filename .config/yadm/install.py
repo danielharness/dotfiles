@@ -32,7 +32,7 @@ class CommandJob:
     """
 
     title: str
-    commands: Sequence[Sequence[str]]
+    commands: list[list[str]]
     finish_message: str
 
 
@@ -40,28 +40,31 @@ class CommandJob:
 def main(
     base_dir: Annotated[Path, Argument()] = Path(__file__).resolve().parent
 ) -> None:
-    # TODO: ensure all install commands upgrade too
-    jobs = get_requirements_install_jobs(base_dir / "requirements")
+    jobs: list[CommandJob] = get_requirements_install_jobs(
+        base_dir / "requirements"
+    ) + [get_oh_my_zsh_install_job(), get_terminal_theme_install_job()]
 
     ensure_sudo()
-    print(
-        f"Running {len(jobs)} jobs with {sum(len(job.commands) for job in jobs)} commands..."
-    )
     run_jobs_display(jobs)
 
     print("[green]Done![/green]")
 
 
-def execute(*args: str | PathLike) -> None:
+def execute(*args: str | PathLike) -> str:
     """
-    Executes given command, checking its result.
+    Executes given command, erroring if it fails.
+    Returns its output.
     """
-    subprocess.run(args, capture_output=True, check=True)
+    result = subprocess.run(args, capture_output=True, check=True)
+    output = result.stdout.decode()
+    if output.endswith("\n"):
+        output = output[:-1]
+    return output
 
 
 def execute_display(*args: str | PathLike, stdout: Text, stderr: Text) -> None:
     """
-    Executes given command, checking its result.
+    Executes given command, erroring if it fails.
     Displays its output to given `Text` objects.
     """
 
@@ -119,8 +122,8 @@ def run_jobs_display(jobs: Sequence[CommandJob]) -> None:
     )
 
     # Display current command output
-    stdout_text = Text()
-    stderr_text = Text()
+    stdout_text = Text(overflow="fold")
+    stderr_text = Text(overflow="fold")
 
     # Format displays nicely in tables
     progress_table = Table.grid(expand=True)
@@ -203,7 +206,7 @@ def read_requirements(file: Path) -> list[str]:
 
 def get_requirements_install_jobs(requirements_dir: Path) -> list[CommandJob]:
     """
-    Returns a list of jobs to install all requirements from given directory.
+    Returns a list of jobs that install all requirements from given directory.
     """
     REQUIREMENTS = (
         ("apt", "apt.txt", get_apt_requirement_install_commands),
@@ -212,7 +215,7 @@ def get_requirements_install_jobs(requirements_dir: Path) -> list[CommandJob]:
         ("snap", "snap.txt", get_snap_requirement_install_commands),
     )
 
-    jobs: list[CommandJob] = list()
+    jobs: list[CommandJob] = []
     for package_manager, filename, get_cmds_func in REQUIREMENTS:
         path = requirements_dir / filename
         if not path.is_file():
@@ -223,7 +226,7 @@ def get_requirements_install_jobs(requirements_dir: Path) -> list[CommandJob]:
 
         jobs.append(
             CommandJob(
-                title=package_manager,
+                title=f"{package_manager.title()} requirements",
                 commands=get_cmds_func(requirements),
                 finish_message=(
                     f"{len(requirements)} package"
@@ -242,8 +245,22 @@ def get_apt_requirement_install_commands(
     """
     Returns a list of commands that install given apt requirements.
     """
-    commands = [["sudo", "apt", "update", "-y"], ["sudo", "apt", "upgrade", "-y"]]
-    commands.extend(["sudo", "apt", "install", "-y", r] for r in requirements)
+    commands = [
+        ["sudo", "apt-get", "update", "-y"],
+        ["sudo", "apt-get", "upgrade", "-y"],
+    ]
+    commands.extend(
+        [
+            "sudo",
+            "apt-get",
+            "install",
+            "-y",
+            "-qq",
+            "-o=Dpkg::Use-Pty=0",
+            r,
+        ]
+        for r in requirements
+    )
     return commands
 
 
@@ -253,8 +270,25 @@ def get_brew_requirement_install_commands(
     """
     Returns a list of commands that install given brew requirements.
     """
-    commands = [["brew", "update"]]
-    commands.extend(["brew", "install", r] for r in requirements)
+    commands = [
+        # Install brew
+        [
+            "bash",
+            "-c",
+            (
+                'bash -c "'
+                "export NONINTERACTIVE=1;"
+                " $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+                '"'
+            ),
+        ],
+        # Upgrade brew
+        ["/home/linuxbrew/.linuxbrew/bin/brew", "upgrade"],
+    ]
+    # Install packages
+    commands.extend(
+        ["/home/linuxbrew/.linuxbrew/bin/brew", "install", r] for r in requirements
+    )
     return commands
 
 
@@ -276,6 +310,67 @@ def get_snap_requirement_install_commands(
     commands = [["sudo", "snap", "refresh"]]
     commands.extend(["sudo", "snap", "install", "--classic", r] for r in requirements)
     return commands
+
+
+def get_oh_my_zsh_install_job() -> CommandJob:
+    """
+    Returns a job that installs oh-my-zsh and sets zsh as the default shell.
+    """
+    commands: list[list[str]] = []
+
+    # Clone oh-my-zsh
+    install_dir = Path.home() / ".oh-my-zsh"
+    if not install_dir.exists():
+        commands.append(
+            ["git", "clone", "https://github.com/ohmyzsh/ohmyzsh.git", str(install_dir)]
+        )
+
+    # Set zsh as default shell
+    commands.append(["sudo", "chsh", "-s", execute("which", "zsh"), execute("whoami")])
+
+    # Update oh-my-zsh
+    commands.append(["zsh", str(install_dir / "tools" / "upgrade.sh")])
+
+    return CommandJob(title="Oh-my-zsh", commands=commands, finish_message="Setup done")
+
+
+def get_terminal_theme_install_job() -> CommandJob:
+    """
+    Returns a job that installs the terminal theme.
+    """
+    PROFILES_KEY = "/org/gnome/terminal/legacy/profiles:"
+
+    profile_slug = execute("dconf", "read", f"{PROFILES_KEY}/default").replace("'", "")
+    profile_key = f"{PROFILES_KEY}/:{profile_slug}"
+
+    def dset(key: str, value: str) -> list[str]:
+        return ["dconf", "write", f"{profile_key}/{key}", value]
+
+    commands = [
+        # Refresh font cache
+        ["fc-cache", "-fv"],
+        # Set theme: "hyper-snazzy" from https://github.com/tobark/hyper-snazzy-gnome-terminal
+        dset("visible-name", "'hyper-snazzy'"),
+        dset(
+            "palette",
+            "['#282a36', '#ff5c57', '#5af78e', '#f3f99d', '#57c7ff', '#ff6ac1', '#9aedfe', '#f1f1f0', '#686868', '#ff5c57', '#5af78e', '#f3f99d', '#57c7ff', '#ff6ac1', '#9aedfe', '#eff0eb']",
+        ),
+        dset("background-color", "'#282a36'"),
+        dset("foreground-color", "'#eff0eb'"),
+        dset("bold-color", "'#eff0eb'"),
+        dset("bold-color-same-as-fg", "true"),
+        dset("use-theme-colors", "false"),
+        dset("use-theme-background", "false"),
+        # use FiraCode Nerd Font
+        dset("use-system-font", "false"),
+        dset("font", "'FiraCode Nerd Font Mono 12'"),
+        # Wait for screen refresh
+        ["sleep", "1"],
+    ]
+
+    return CommandJob(
+        title="Terminal theme", commands=commands, finish_message="Install done"
+    )
 
 
 if __name__ == "__main__":
