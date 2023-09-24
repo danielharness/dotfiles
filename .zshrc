@@ -3,6 +3,8 @@ export ZSH=$HOME/.oh-my-zsh
 
 # Set homebrew environment
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+# Add homebrew completion functions
+FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 
 # Hyphen-insensitive completion, makes '_' and '-'' interchangeable
 HYPHEN_INSENSITIVE="true"
@@ -11,15 +13,19 @@ HYPHEN_INSENSITIVE="true"
 zstyle ':omz:update' mode auto
 zstyle ':omz:update' frequency 14
 
-# Display dots while waiting for completion
-COMPLETION_WAITING_DOTS="true"
-
 # Plugins
 plugins=(
+    alias-finder
     fzf
     git
     starship
 )
+
+# Configure plugins
+zstyle ':omz:plugins:alias-finder' autoload yes
+zstyle ':omz:plugins:alias-finder' longer yes
+zstyle ':omz:plugins:alias-finder' exact yes
+zstyle ':omz:plugins:alias-finder' cheaper yes
 
 # Load oh-my-zsh
 source $ZSH/oh-my-zsh.sh
@@ -70,9 +76,26 @@ export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 # Use `bat` to color --help of every command
 alias -g -- --help='--help 2>&1 | bat --language=help --style=plain --paging=never'
 
-# Use `exa` instead of `ls`
-alias ls="exa"
-alias la="ls -lah"
+# Use `eza` instead of `ls`
+alias ls="eza --git --icons --classify --group-directories-first --time-style=long-iso --color-scale"
+alias l="ls --long --all --header"
+alias ll="l"
+alias la="l"
+alias llm="l --sort=modified"
+alias tree="eza --tree"
 
 # Use `dust` instead of `du`
 alias du="dust"
+
+# Use `python3` as the default
+alias python="python3"
+alias ipython="ipython3"
+
+
+# -------------------
+# ---- Keep last ----
+# -------------------
+
+# Source `zsh` plugins which aren't provided with oh-my-zsh
+source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"

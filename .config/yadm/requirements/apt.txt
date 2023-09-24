@@ -1,8 +1,6 @@
 atool
 build-essential
 curl
-exa
-fzf
 gconf2
 ipython3
 python3

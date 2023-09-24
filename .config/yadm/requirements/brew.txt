@@ -1,5 +1,10 @@
 bat
 dust
+eza
+fzf
 git-delta
 starship
+ugit
 zellij
+zsh-autosuggestions
+zsh-syntax-highlighting
