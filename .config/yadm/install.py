@@ -45,7 +45,6 @@ def main(
     ) + [
         get_oh_my_zsh_install_job(),
         get_terminal_theme_install_job(),
-        get_extra_zsh_completions_install_job(),
         get_zellij_plugins_install_job(),
         get_yadm_ignore_job(),
     ]
@@ -381,26 +380,6 @@ def get_terminal_theme_install_job() -> CommandJob:
     )
 
 
-def get_extra_zsh_completions_install_job() -> CommandJob:
-    """
-    Returns a job that installs extra zsh completions.
-    """
-    return CommandJob(
-        title="Extra completions",
-        commands=[
-            [
-                "zsh",
-                "-c",
-                (
-                    "zellij setup --generate-completion zsh"
-                    + " | sudo zsh -c 'tee /usr/local/share/zsh/site-functions/_zellij'"
-                ),
-            ]
-        ],
-        finish_message="Installed",
-    )
-
-
 def get_zellij_plugins_install_job() -> CommandJob:
     """
     Returns a job that installs zellij plugins.
@@ -409,17 +388,17 @@ def get_zellij_plugins_install_job() -> CommandJob:
         "https://github.com/dj95/zjstatus/releases/latest/download/zjstatus.wasm",
     ]
 
-    zellij_plugins_dir = Path.home() / ".config" / "zellij" / "plugins"
+    plugins_dir = Path.home() / ".config" / "zellij" / "plugins"
 
     # Create plugin directory
-    commands = [["mkdir", "-p", str(zellij_plugins_dir)]]
+    commands = [["mkdir", "-p", str(plugins_dir)]]
 
     # Install plugins
     commands.extend(
         [
             "wget",
             "-P",
-            str(zellij_plugins_dir),
+            str(plugins_dir),
             p,
         ]
         for p in PLUGINS
