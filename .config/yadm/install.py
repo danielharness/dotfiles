@@ -331,10 +331,14 @@ def get_oh_my_zsh_install_job() -> CommandJob:
         )
 
     # Set zsh as default shell
-    commands.append(["sudo", "chsh", "-s", execute("which", "zsh"), execute("whoami")])
-
-    # Update oh-my-zsh
-    commands.append(["zsh", str(install_dir / "tools" / "upgrade.sh")])
+    commands.append(
+        [
+            "sudo",
+            "bash",
+            "-c",
+            f"chsh -s $(which zsh) {execute('whoami')}",
+        ]
+    )
 
     return CommandJob(
         title="Oh-my-zsh setup", commands=commands, finish_message="Installed"
@@ -347,7 +351,21 @@ def get_terminal_theme_install_job() -> CommandJob:
     """
     PROFILES_KEY = "/org/gnome/terminal/legacy/profiles:"
 
+    # Get the default profile
     profile_slug = execute("dconf", "read", f"{PROFILES_KEY}/default").replace("'", "")
+    # If there is no default profile, get the first one instead
+    if not profile_slug:
+        profile_slug = (
+            next(
+                filter(
+                    lambda slug: slug.strip().startswith(":"),
+                    execute("dconf", "list", f"{PROFILES_KEY}/").splitlines(),
+                )
+            )
+            .replace(":", "")
+            .replace("/", "")
+        )
+
     profile_key = f"{PROFILES_KEY}/:{profile_slug}"
 
     def dset(key: str, value: str) -> list[str]:
