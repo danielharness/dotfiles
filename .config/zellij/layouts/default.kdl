@@ -1,0 +1,21 @@
+layout {
+    pane
+
+    pane size=1 borderless=true {
+        plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
+            format_left  " #[fg=#89B4FA,bold]{tabs}"
+            format_right " {mode} {datetime} "
+
+            hide_frame_for_single_pane "true"
+
+            mode_normal "#[fg=#9399B2,bold]{name}"
+
+            tab_normal "#[fg=#6C7086] {index}: {name} "
+            tab_active "#[fg=#9399B2,bold,italic] {index}: {name} "
+
+            datetime          "#[fg=#6C7086,bold]{format}"
+            datetime_format   "%H:%M"
+            datetime_timezone "Asia/Jerusalem"
+        }
+    }
+}
