@@ -1,8 +1,22 @@
+# Set homebrew environment
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+# Run `zellij` if not inside it already
+if [[ -z "$ZELLIJ" ]]; then
+    # If there is a running session but it's in use, create a new session
+    if [[ $(ps -eo command | rg -x 'zellij.*') ]]; then
+        zellij
+    # Otherwise try to attach to a running session, or create a new session if one does not exist
+    else
+        zellij attach -c
+    fi
+    # Exit when closed
+    exit
+fi
+
 # Set oh-my-zsh install directory
 export ZSH=$HOME/.oh-my-zsh
 
-# Set homebrew environment
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 # Add homebrew completion functions
 FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 
@@ -30,23 +44,15 @@ zstyle ':omz:plugins:alias-finder' cheaper yes
 # Load oh-my-zsh
 source $ZSH/oh-my-zsh.sh
 
+# Source `zsh` plugins which aren't provided with oh-my-zsh
+source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
 
 # ----------------------------
 # ---- User configuration ----
 # ----------------------------
 
-# Run `zellij` if not inside it already
-if [[ -z "$ZELLIJ" ]]; then
-    # If there is a running session but it's in use, create a new session
-    if [[ $(ps -eo command | rg -x 'zellij.*') ]]; then
-        zellij
-    # Otherwise try to attach to a running session, or create a new session if one does not exist
-    else
-        zellij attach -c
-    fi
-    # Exit when closed
-    exit
-fi
 # Update `zellij` tab name on directory change
 zellij_tab_name_update() {
     if [[ -n $ZELLIJ ]]; then
@@ -90,12 +96,3 @@ alias du="dust"
 # Use `python3` as the default
 alias python="python3"
 alias ipython="ipython3"
-
-
-# -------------------
-# ---- Keep last ----
-# -------------------
-
-# Source `zsh` plugins which aren't provided with oh-my-zsh
-source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
