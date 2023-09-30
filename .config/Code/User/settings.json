@@ -1,16 +1,22 @@
 {
     "security.workspace.trust.untrustedFiles": "open",
     "files.autoSave": "afterDelay",
-    "editor.fontSize": 16,
+    "editor.fontSize": 18,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
+    "errorLens.enabledDiagnosticLevels": [
+        "error",
+        "warning"
+    ],
+    "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono",
+
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        },
     },
     "isort.args": [
         "--profile",
         "black"
-    ],
+    ]
 }
