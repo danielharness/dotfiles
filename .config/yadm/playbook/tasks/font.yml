@@ -1,0 +1,12 @@
+---
+- name: Install nerd fonts
+  become: true
+  become_user: "{{ username }}"
+  ansible.builtin.shell: |
+    curl -fsSLo /tmp/font.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/{{ item }}.zip"
+    mkdir -p ~/.local/share/fonts
+    unzip -d ~/.local/share/fonts /tmp/font.zip
+    rm /tmp/font.zip
+    fc-cache -fv
+  loop: "{{ nerd_fonts }}"
+  when: nerd_fonts is defined

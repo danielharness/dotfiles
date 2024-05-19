@@ -1,0 +1,9 @@
+---
+- name: Set gnome terminal theme
+  become: true
+  become_user: "{{ username }}"
+  ansible.builtin.shell: |
+    export TERMINAL=gnome-terminal
+    /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/Gogh-Co/Gogh/master/installs/{{ gnome_terminal_theme }}.sh")"
+  when: gnome_terminal_theme is defined
+

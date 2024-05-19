@@ -1,0 +1,27 @@
+---
+- name: Install zsh
+  become: true
+  ansible.builtin.apt:
+    name: zsh
+    state: latest
+
+- name: Set oh-my-zsh install path
+  become: true
+  become_user: "{{ username }}"
+  ansible.builtin.set_fact:
+    omz_path: "{{ '$HOME/.oh-my-zsh' }}"
+
+- name: Install oh-my-zsh
+  become: true
+  become_user: "{{ username }}"
+  ansible.builtin.git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: "{{ omz_path }}"
+    clone: true
+    update: true
+
+- name: Set zsh as default shell
+  become: true
+  ansible.builtin.user:
+    name: "{{ username }}"
+    shell: /bin/zsh

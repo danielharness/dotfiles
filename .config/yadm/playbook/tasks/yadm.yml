@@ -1,0 +1,8 @@
+---
+- name: Ignore files in yadm
+  become: true
+  become_user: "{{ username }}"
+  ansible.builtin.shell: |
+    yadm update-index --assume-unchanged {{ item }}
+  loop: "{{ yadm_ignore_files }}"
+  when: yadm_ignore_files is defined

@@ -1,0 +1,50 @@
+---
+- name: Set up Ubuntu machine
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - config.yml
+
+  pre_tasks:
+    - name: Perform dist-upgrade
+      become: true
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Clean apt
+      become: true
+      ansible.builtin.apt:
+        autoremove: true
+        clean: true
+        autoclean: true
+
+  tasks:
+    - name: Apt packages
+      ansible.builtin.import_tasks:
+        file: tasks/apt.yml
+
+    - name: Homebrew packages
+      ansible.builtin.import_tasks:
+        file: tasks/homebrew.yml
+
+    - name: Snap packages
+      ansible.builtin.import_tasks:
+        file: tasks/snap.yml
+
+    - name: Zsh setup
+      ansible.builtin.import_tasks:
+        file: tasks/zsh.yml
+
+    - name: Fonts
+      ansible.builtin.import_tasks:
+        file: tasks/font.yml
+
+    - name: Terminal theme
+      ansible.builtin.import_tasks:
+        file: tasks/gogh.yml
+
+    - name: Yadm
+      ansible.builtin.import_tasks:
+        file: tasks/yadm.yml

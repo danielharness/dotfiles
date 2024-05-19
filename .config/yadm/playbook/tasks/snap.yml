@@ -1,0 +1,15 @@
+---
+- name: Install snap
+  become: true
+  ansible.builtin.apt:
+    name: snapd
+    state: latest
+
+- name: Install snap packages
+  become: true
+  community.general.snap:
+    name: "{{ item }}"
+    classic: true
+    state: present
+  loop: "{{ snap_packages }}"
+  when: snap_packages is defined

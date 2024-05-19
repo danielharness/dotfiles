@@ -1,0 +1,20 @@
+---
+- name: Install homebrew
+  become: true
+  become_user: "{{ username }}"
+  ansible.builtin.shell: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+- name: Update homebrew
+  become: true
+  become_user: "{{ username }}"
+  community.general.homebrew:
+    update_homebrew: true
+
+- name: Install homebrew packages
+  become: true
+  become_user: "{{ username }}"
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: latest
+  loop: "{{ homebrew_packages }}"
+  when: homebrew_packages is defined

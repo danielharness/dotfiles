@@ -1,0 +1,36 @@
+---
+username: "{{ lookup('env', 'USER') }}"
+
+apt_packages:
+  - atool
+  - build-essential
+  - curl
+  - ipython3
+  - python3
+  - python3-pip
+  - ripgrep
+  - vim
+  - yadm
+
+homebrew_packages:
+  - bat
+  - dust
+  - eza
+  - fzf
+  - git-delta
+  - starship
+  - ugit
+  - zellij
+  - zsh-autosuggestions
+  - zsh-syntax-highlighting
+
+snap_packages:
+  - code
+
+nerd_fonts:
+  - FiraCode
+
+gnome_terminal_theme: snazzy
+
+yadm_ignore_files:
+  - ~/.gitconfig
